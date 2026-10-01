@@ -1,3 +1,4 @@
+console.log("WEBOLY NEW SCRIPT LOADED");
 const menuToggle = document.querySelector('.menu-toggle');
 const navLinks = document.querySelector('#navLinks');
 
