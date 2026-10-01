@@ -28,23 +28,64 @@ const observer = new IntersectionObserver((entries) => {
 
 document.querySelectorAll('.reveal').forEach((el) => observer.observe(el));
 
-document.getElementById('year').textContent = new Date().getFullYear();
+const yearEl = document.getElementById('year');
+if (yearEl) yearEl.textContent = new Date().getFullYear();
 
-// Replace this address before launch.
-const WEBOLY_EMAIL = 'hello@weboly.in';
+// Configure the form backend once you create a form endpoint.
+// Example for Formspree: https://formspree.io/f/your-form-id
+const WEBOLY_FORM_ENDPOINT = 'https://formspree.io/f/mbglepypD';
+
 const form = document.getElementById('contactForm');
 const note = document.getElementById('formNote');
+const submitButton = form?.querySelector('button[type="submit"]');
 
-form?.addEventListener('submit', (event) => {
+form?.addEventListener('submit', async (event) => {
   event.preventDefault();
-  const data = new FormData(form);
-  const name = String(data.get('name') || '').trim();
-  const email = String(data.get('email') || '').trim();
-  const project = String(data.get('project') || '').trim();
-  const message = String(data.get('message') || '').trim();
 
-  const subject = encodeURIComponent(`WEBOLY enquiry — ${project}`);
-  const body = encodeURIComponent(`Name: ${name}\nEmail: ${email}\nProject type: ${project}\n\n${message}`);
-  window.location.href = `mailto:${WEBOLY_EMAIL}?subject=${subject}&body=${body}`;
-  if (note) note.textContent = `Opening your email client for ${WEBOLY_EMAIL}.`;
+  if (WEBOLY_FORM_ENDPOINT.includes('REPLACE_WITH_YOUR_FORM_ID')) {
+    if (note) {
+      note.textContent = 'Contact form is not connected yet. Add the WEBOLY form endpoint in script.js.';
+      note.classList.add('error');
+    }
+    return;
+  }
+
+  const originalButtonText = submitButton?.innerHTML || 'Send enquiry';
+  if (submitButton) {
+    submitButton.disabled = true;
+    submitButton.innerHTML = 'Sending…';
+  }
+  if (note) {
+    note.textContent = 'Sending your enquiry…';
+    note.classList.remove('error');
+  }
+
+  try {
+    const response = await fetch(WEBOLY_FORM_ENDPOINT, {
+      method: 'POST',
+      body: new FormData(form),
+      headers: { Accept: 'application/json' }
+    });
+
+    if (!response.ok) {
+      throw new Error(`Request failed with status ${response.status}`);
+    }
+
+    form.reset();
+    if (note) {
+      note.textContent = 'Thanks — your enquiry has been received. We’ll get back to you soon.';
+      note.classList.remove('error');
+    }
+  } catch (error) {
+    console.error('WEBOLY contact form error:', error);
+    if (note) {
+      note.textContent = 'We could not send your enquiry right now. Please try again in a moment.';
+      note.classList.add('error');
+    }
+  } finally {
+    if (submitButton) {
+      submitButton.disabled = false;
+      submitButton.innerHTML = originalButtonText;
+    }
+  }
 });
